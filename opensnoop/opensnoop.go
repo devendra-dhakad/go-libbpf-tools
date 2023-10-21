@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/cilium/ebpf"
@@ -17,6 +19,8 @@ import (
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel -cc clang -cflags "-O2 -g -Wall -Werror" -type event opensnoop ./bpf/opensnoop.bpf.c -- -I../headers
 func main() {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 
 	logFile, _ := os.Create("opensnoop.log")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -66,15 +70,18 @@ func main() {
 		log.Fatalf("Not able to attach to  tracepoint %v", err)
 	}
 
-	// if _, err := link.Tracepoint("syscalls", "sys_enter_openat2", objs.opensnoopPrograms.Openat2Syscall, nil); err != nil {
-	// 	log.Fatalf("Not able to attach to  tracepoint %v", err)
-	// }
+	if _, err := link.Tracepoint("syscalls", "sys_enter_openat2", objs.opensnoopPrograms.Openat2Syscall, nil); err != nil {
+		log.Fatalf("Not able to attach to  tracepoint %v", err)
+	}
 
 	reader, err := ringbuf.NewReader(objs.opensnoopMaps.Ringbuff)
 	if err != nil {
 		log.Printf("%v", err)
 	}
-
+	go ringbuff(reader)
+	<-ch
+}
+func ringbuff(reader *ringbuf.Reader) {
 	var event_data opensnoopEvent
 	for {
 		rd_data, err := reader.Read()
@@ -100,5 +107,4 @@ func main() {
 			event_data.Filename[:],
 			event_data.Code)
 	}
-
 }
