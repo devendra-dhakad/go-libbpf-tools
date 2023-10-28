@@ -22,7 +22,7 @@ int BPF_PROG(file_open, struct file *file){
     struct event *event_t;
     const unsigned char *file_name;
     char filelocal[] = "happy.txt";
-    unsigned char *k;
+    u8 filenamelo[100];
 
     event_t = bpf_ringbuf_reserve(&ringbuff, sizeof(struct event), 0);
     if (!event_t){
@@ -31,13 +31,14 @@ int BPF_PROG(file_open, struct file *file){
 
     file_name  = file->f_path.dentry->d_name.name;
     bpf_core_read_str(&event_t->filename, sizeof(event_t->filename), file_name);
-    k = &event_t->filename;
-    if (__builtin_memcmp(k, filelocal, 4) == 0){
-        bpf_printk("0000000000000000");
-        // return 0;
-    }
-    
+
+    __builtin_memcpy(filenamelo, event_t->filename, sizeof(filenamelo));
+
     bpf_ringbuf_submit(event_t, 0);
+    bpf_printk("%d", sizeof(event_t->filename));
+    if (__builtin_memcmp(filenamelo , filelocal, 4) == 0){
+        return -EPERM;
+    }
 
     return 0;
 }
