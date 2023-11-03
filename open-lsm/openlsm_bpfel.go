@@ -12,10 +12,7 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type openlsmEvent struct {
-	TimeStamp int32
-	Filename  [100]uint8
-}
+type openlsmEvent struct{ FileName [100]uint8 }
 
 // loadOpenlsm returns the embedded CollectionSpec for openlsm.
 func loadOpenlsm() (*ebpf.CollectionSpec, error) {
@@ -65,6 +62,7 @@ type openlsmProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type openlsmMapSpecs struct {
+	ArgMap   *ebpf.MapSpec `ebpf:"arg_map"`
 	Ringbuff *ebpf.MapSpec `ebpf:"ringbuff"`
 }
 
@@ -87,11 +85,13 @@ func (o *openlsmObjects) Close() error {
 //
 // It can be passed to loadOpenlsmObjects or ebpf.CollectionSpec.LoadAndAssign.
 type openlsmMaps struct {
+	ArgMap   *ebpf.Map `ebpf:"arg_map"`
 	Ringbuff *ebpf.Map `ebpf:"ringbuff"`
 }
 
 func (m *openlsmMaps) Close() error {
 	return _OpenlsmClose(
+		m.ArgMap,
 		m.Ringbuff,
 	)
 }
