@@ -60,6 +60,7 @@ type bpfProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
+	ArgMap    *ebpf.MapSpec `ebpf:"arg_map"`
 	KprobeMap *ebpf.MapSpec `ebpf:"kprobe_map"`
 }
 
@@ -82,11 +83,13 @@ func (o *bpfObjects) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
+	ArgMap    *ebpf.Map `ebpf:"arg_map"`
 	KprobeMap *ebpf.Map `ebpf:"kprobe_map"`
 }
 
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
+		m.ArgMap,
 		m.KprobeMap,
 	)
 }

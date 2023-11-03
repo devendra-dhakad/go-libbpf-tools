@@ -34,6 +34,15 @@ func main() {
 	defer objs.Close()
 	objs.bpfMaps.KprobeMap.Put(uint32(0), uint64(500))
 
+	value := []byte("Hello, world!")
+	var fixed [80]byte
+	copy(fixed[:], value)
+
+	err := objs.bpfMaps.ArgMap.Put(uint32(0), fixed)
+	if err != nil {
+		log.Println(err)
+	}
+
 	// Open a Kprobe at the entry point of the kernel function and attach the
 	// pre-compiled program. Each time the kernel function enters, the program
 	// will increment the execution counter by 1. The read loop below polls this
@@ -50,6 +59,9 @@ func main() {
 	defer ticker.Stop()
 
 	log.Println("Waiting for events..")
+	var map_str string
+	objs.bpfMaps.ArgMap.Lookup(uint32(0), &map_str)
+	log.Println(map_str)
 
 	for range ticker.C {
 		var value uint64
