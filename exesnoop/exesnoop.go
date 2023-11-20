@@ -33,14 +33,6 @@ func main() {
 	objs := exesnoopObjects{}
 
 	collectionSpec, _ := ebpf.LoadCollectionSpec("exesnoop_bpfel.o")
-	if collectionSpec.Types != nil {
-		err := collectionSpec.RewriteConstants(map[string]interface{}{
-			"happy": uint32(5),
-		})
-		if err != nil {
-			fmt.Println("Can't rewrite constant", err)
-		}
-	}
 
 	opt := ebpf.CollectionOptions{
 		Programs: ebpf.ProgramOptions{

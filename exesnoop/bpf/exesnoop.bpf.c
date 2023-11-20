@@ -14,8 +14,6 @@ struct event{
     u8 argu[10][100];
 };
 
-const volatile u32 happy = 0;
-
 #define LAST_32_BITS(x) x & 0xFFFFFFFF
 #define FIRST_32_BITS(x) x >> 32
 
