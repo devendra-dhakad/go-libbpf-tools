@@ -125,6 +125,5 @@ func _ExesnoopClose(closers ...io.Closer) error {
 }
 
 // Do not access this directly.
-//
 //go:embed exesnoop_bpfel.o
 var _ExesnoopBytes []byte

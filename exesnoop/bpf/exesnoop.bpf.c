@@ -45,7 +45,7 @@ int execve_syscall(struct trace_event_raw_sys_enter *ctx){
 
     // 2. Curent working directory(not the whole path)
     const unsigned char *name =  BPF_CORE_READ(task, fs, pwd.dentry, d_name.name);
-    bpf_core_read_str(&event_t->cwd, sizeof(&event_t->cwd), name);
+    bpf_core_read_str(&event_t->cwd, sizeof(event_t->cwd), name);
 
     // 5. User ID
     // 6. Group ID
