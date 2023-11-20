@@ -9,13 +9,17 @@ struct event{
     gid_t gid;
     uid_t euid;
     gid_t egid;
-    int fd;
-    __u8 cwd[100];
-    u8 argu[10][100];
+    uint32_t fd;
+    __u8 cwd[50];
+    __kernel_sa_family_t s_family;
+    int addrlen;
 };
 
 #define LAST_32_BITS(x) x & 0xFFFFFFFF
 #define FIRST_32_BITS(x) x >> 32
+
+#define AF_INET = 2;
+#define AF_INET6 = 10;
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
@@ -45,7 +49,7 @@ int execve_syscall(struct trace_event_raw_sys_enter *ctx){
 
     // 2. Curent working directory(not the whole path)
     const unsigned char *name =  BPF_CORE_READ(task, fs, pwd.dentry, d_name.name);
-    bpf_core_read_str(&event_t->cwd, sizeof(&event_t->cwd), name);
+    bpf_core_read_str(&event_t->cwd, sizeof(event_t->cwd), name);
 
     // 5. User ID
     // 6. Group ID
@@ -56,24 +60,13 @@ int execve_syscall(struct trace_event_raw_sys_enter *ctx){
     // process ID
     event_t->pid = FIRST_32_BITS(bpf_get_current_pid_tgid());
 
-    bpf_core_read_user(&event_t->fd, sizeof(event_t->fd), ctx->args[0]);
-    const char **args = (const char **)(ctx->args[1]);
-    const char *argp;
-
-    for (int i = 0; i < MAX_ARGS; i++) {
-
-        bpf_probe_read_user(&argp, sizeof(argp), &args[i]);
-        bpf_probe_read_user(&event_t->argu[i], sizeof(event_t->argu[i]), argp);
-        bpf_printk("happy %d %s ", args, &event_t->argu[i]);
-        if (!event_t->argu[i]){
-			goto cleanup;
-        }
-
-    }
-    cleanup:
+    event_t->fd = (uint32_t) BPF_CORE_READ(ctx, args[0]);
+    struct sockaddr *saddr = (struct sockaddr *)(ctx->args[1]);
+    event_t->s_family = BPF_CORE_READ_USER(saddr, sa_family);
+    int *addrlen = (int *)(ctx->args[2]);
+    bpf_core_read_user(&event_t->addrlen, sizeof(event_t->addrlen), addrlen);
 
     bpf_ringbuf_submit(event_t, 0);
-    
     return 0;
     }
 

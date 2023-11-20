@@ -13,14 +13,15 @@ import (
 )
 
 type exesnoopEvent struct {
-	Uid  uint32
-	Pid  int32
-	Gid  uint32
-	Euid uint32
-	Egid uint32
-	Fd   int32
-	Cwd  [100]uint8
-	Argu [10][100]uint8
+	Uid      uint32
+	Pid      int32
+	Gid      uint32
+	Euid     uint32
+	Egid     uint32
+	Fd       uint32
+	Cwd      [50]uint8
+	S_family uint16
+	Addrlen  int32
 }
 
 // loadExesnoop returns the embedded CollectionSpec for exesnoop.
@@ -125,6 +126,5 @@ func _ExesnoopClose(closers ...io.Closer) error {
 }
 
 // Do not access this directly.
-//
 //go:embed exesnoop_bpfel.o
 var _ExesnoopBytes []byte

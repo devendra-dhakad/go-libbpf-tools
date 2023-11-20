@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/cilium/ebpf"
@@ -67,20 +66,6 @@ func main() {
 	<-ch
 }
 
-func arrayToString(arr [][100]uint8) string {
-	var str string
-	for i := 0; i < 10; i++ {
-		for j := 0; j < 100; j++ {
-			if arr[i][j] == 0 {
-				break
-			}
-			str += string(rune(arr[i][j]))
-		}
-		str += " "
-	}
-	return str
-}
-
 func ringbuff(reader *ringbuf.Reader) {
 	var event_data exesnoopEvent
 	for {
@@ -95,7 +80,7 @@ func ringbuff(reader *ringbuf.Reader) {
 			log.Printf("error in parsing ringbuff data")
 		}
 
-		log.Printf("Process ID: %d, User ID: %d, Group ID: %d, Effective User ID: %d, Effective Group ID: %d, CWD : %s, Syscall arguments: fd %d, argv %s \n",
+		log.Printf("Process ID: %d, User ID: %d, Group ID: %d, Effective User ID: %d, Effective Group ID: %d, CWD : %s, Syscall arguments: FD %d, Addrlen %d, S_family %d\n",
 			event_data.Pid,
 			event_data.Uid,
 			event_data.Gid,
@@ -103,7 +88,8 @@ func ringbuff(reader *ringbuf.Reader) {
 			event_data.Egid,
 			event_data.Cwd[:],
 			event_data.Fd,
-			strings.Split(arrayToString(event_data.Argu[:][:]), "#")[0],
+			event_data.Addrlen,
+			event_data.S_family,
 		)
 
 	}
