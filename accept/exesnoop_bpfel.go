@@ -22,6 +22,9 @@ type exesnoopEvent struct {
 	Cwd      [50]uint8
 	S_family uint16
 	Addrlen  int32
+	IpAddr   uint32
+	Port     uint16
+	_        [2]byte
 }
 
 // loadExesnoop returns the embedded CollectionSpec for exesnoop.

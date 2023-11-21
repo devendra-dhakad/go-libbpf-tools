@@ -13,13 +13,11 @@ struct event{
     __u8 cwd[50];
     __kernel_sa_family_t s_family;
     int addrlen;
+    __u32 ip_addr;
+    __u16 port;
 };
 
-#define LAST_32_BITS(x) x & 0xFFFFFFFF
 #define FIRST_32_BITS(x) x >> 32
-
-#define AF_INET = 2;
-#define AF_INET6 = 10;
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
@@ -28,9 +26,6 @@ struct {
 
 struct event *unused_event __attribute__((unused));
 
-
-#define FIRST_32_BITS(x) x >> 32
-#define MAX_ARGS 10
 
 SEC("tracepoint/syscalls/sys_enter_accept")
 int execve_syscall(struct trace_event_raw_sys_enter *ctx){
@@ -63,6 +58,13 @@ int execve_syscall(struct trace_event_raw_sys_enter *ctx){
     event_t->fd = (uint32_t) BPF_CORE_READ(ctx, args[0]);
     struct sockaddr *saddr = (struct sockaddr *)(ctx->args[1]);
     event_t->s_family = BPF_CORE_READ_USER(saddr, sa_family);
+
+    struct sockaddr_in *saddr_in = (struct sockaddr_in *)saddr;
+    __be32 ip_addr =  BPF_CORE_READ_USER(saddr_in, sin_addr.s_addr);
+    event_t->ip_addr =  __builtin_bswap32(ip_addr);
+    __be16 port =  BPF_CORE_READ_USER(saddr_in, sin_port);
+    event_t->port =  __builtin_bswap16(port);
+
     int *addrlen = (int *)(ctx->args[2]);
     bpf_core_read_user(&event_t->addrlen, sizeof(event_t->addrlen), addrlen);
 

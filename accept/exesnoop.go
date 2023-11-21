@@ -80,7 +80,7 @@ func ringbuff(reader *ringbuf.Reader) {
 			log.Printf("error in parsing ringbuff data")
 		}
 
-		log.Printf("Process ID: %d, User ID: %d, Group ID: %d, Effective User ID: %d, Effective Group ID: %d, CWD : %s, Syscall arguments: FD %d, Addrlen %d, S_family %d\n",
+		log.Printf("Process ID: %d, User ID: %d, Group ID: %d, Effective User ID: %d, Effective Group ID: %d, CWD : %s, Syscall arguments: FD %d, Addrlen %d, S_family %d IP %d Port %d\n",
 			event_data.Pid,
 			event_data.Uid,
 			event_data.Gid,
@@ -90,6 +90,8 @@ func ringbuff(reader *ringbuf.Reader) {
 			event_data.Fd,
 			event_data.Addrlen,
 			event_data.S_family,
+			event_data.IpAddr,
+			event_data.Port,
 		)
 
 	}
