@@ -1,4 +1,4 @@
-APP=exesnoop
+APP=accept
 
 .PHONY: build
 build: gen $(APP)
@@ -6,7 +6,7 @@ build: gen $(APP)
 .PHONY: gen
 gen: bpf2go gobuild run
 
-run: exesnoop.go exesnoop_bpfel.go
+run: accept.go accept_bpfel.go
 	./$(APP)
 
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,7 +18,7 @@ import (
 	"github.com/cilium/ebpf/rlimit"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel -cc clang -cflags "-O2 -g -Wall -Werror" -type event exesnoop ./bpf/exesnoop.bpf.c -- -I../headers
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target bpfel -cc clang -cflags "-O2 -g -Wall -Werror" -type event accept ./bpf/accept.bpf.c -- -I../headers
 func main() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
@@ -29,9 +30,9 @@ func main() {
 	if err := rlimit.RemoveMemlock(); err != nil {
 		log.Fatal(err)
 	}
-	objs := exesnoopObjects{}
+	objs := acceptObjects{}
 
-	collectionSpec, _ := ebpf.LoadCollectionSpec("exesnoop_bpfel.o")
+	collectionSpec, _ := ebpf.LoadCollectionSpec("accept_bpfel.o")
 
 	opt := ebpf.CollectionOptions{
 		Programs: ebpf.ProgramOptions{
@@ -54,11 +55,11 @@ func main() {
 	}
 	defer objs.Close()
 
-	if _, err := link.Tracepoint("syscalls", "sys_enter_accept", objs.exesnoopPrograms.ExecveSyscall, nil); err != nil {
+	if _, err := link.Tracepoint("syscalls", "sys_enter_accept", objs.acceptPrograms.AcceptSyscall, nil); err != nil {
 		log.Fatalf("Not able to attach to  tracepoint %v", err)
 	}
 
-	reader, err := ringbuf.NewReader(objs.exesnoopMaps.Ringbuff)
+	reader, err := ringbuf.NewReader(objs.acceptMaps.Ringbuff)
 	if err != nil {
 		log.Printf("%v", err)
 	}
@@ -66,8 +67,16 @@ func main() {
 	<-ch
 }
 
+func IntToIPv4(ipaddr uint32) net.IP {
+	ip := make(net.IP, net.IPv4len)
+
+	// Proceed conversion
+	binary.BigEndian.PutUint32(ip, ipaddr)
+	return ip
+}
+
 func ringbuff(reader *ringbuf.Reader) {
-	var event_data exesnoopEvent
+	var event_data acceptEvent
 	for {
 		rd_data, err := reader.Read()
 		if err != nil {
@@ -90,7 +99,7 @@ func ringbuff(reader *ringbuf.Reader) {
 			event_data.Fd,
 			event_data.Addrlen,
 			event_data.S_family,
-			event_data.IpAddr,
+			IntToIPv4(event_data.IpAddr),
 			event_data.Port,
 		)
 

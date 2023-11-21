@@ -28,7 +28,7 @@ struct event *unused_event __attribute__((unused));
 
 
 SEC("tracepoint/syscalls/sys_enter_accept")
-int execve_syscall(struct trace_event_raw_sys_enter *ctx){
+int accept_syscall(struct trace_event_raw_sys_enter *ctx){
      struct event *event_t;
 
     event_t = bpf_ringbuf_reserve(&ringbuff, sizeof(struct event), 0);
