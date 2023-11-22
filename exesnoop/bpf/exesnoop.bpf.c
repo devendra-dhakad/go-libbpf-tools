@@ -11,7 +11,8 @@ struct event{
     gid_t egid;
     u8 file_name[100];
     __u8 cwd[100];
-    u8 argu[10][100];
+    u8 argv[10][100];
+    u8 envp[10][100];
 };
 
 #define LAST_32_BITS(x) x & 0xFFFFFFFF
@@ -56,21 +57,31 @@ int execve_syscall(struct trace_event_raw_sys_enter *ctx){
     // process ID
     event_t->pid = FIRST_32_BITS(bpf_get_current_pid_tgid());
 
+    //All the arguments for syscall.
     bpf_core_read_user_str(event_t->file_name, sizeof(event_t->file_name), ctx->args[0]);
-    const char **args = (const char **)(ctx->args[1]);
-    const char *argp;
-
+    const char **argv_arr = (const char **)(ctx->args[1]);
+    const char *argv;
+    const char **envp_arr = (const char **)(ctx->args[2]);
+    const char *envp;
     for (int i = 0; i < MAX_ARGS; i++) {
 
-        bpf_probe_read_user(&argp, sizeof(argp), &args[i]);
-        bpf_probe_read_user(&event_t->argu[i], sizeof(event_t->argu[i]), argp);
-        bpf_printk("happy %d %s ", args, &event_t->argu[i]);
-        if (!event_t->argu[i]){
+        bpf_probe_read_user(&argv, sizeof(argv), &argv_arr[i]);
+        bpf_probe_read_user(&event_t->argv[i], sizeof(event_t->argv[i]), argv);
+        if (!event_t->argv[i]){
 			goto cleanup;
         }
-
     }
     cleanup:
+
+    for (int i = 0; i < MAX_ARGS; i++) {
+        
+        bpf_probe_read_user(&envp, sizeof(envp), &envp_arr[i]);
+        bpf_probe_read_user(&event_t->envp[i], sizeof(event_t->envp[i]), envp);
+        if (!event_t->envp[i]){
+			goto cleanenvp;
+        }
+    }
+    cleanenvp:
 
     bpf_ringbuf_submit(event_t, 0);
     

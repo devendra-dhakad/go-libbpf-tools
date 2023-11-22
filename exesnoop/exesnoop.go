@@ -95,7 +95,7 @@ func ringbuff(reader *ringbuf.Reader) {
 			log.Printf("error in parsing ringbuff data")
 		}
 
-		log.Printf("Process ID: %d, User ID: %d, Group ID: %d, Effective User ID: %d, Effective Group ID: %d, CWD : %s, Syscall arguments: pathname %s, argv %s \n",
+		log.Printf("Process ID: %d, User ID: %d, Group ID: %d, Effective User ID: %d, Effective Group ID: %d, CWD : %s, Syscall arguments: pathname %s, argv %s envp %s \n",
 			event_data.Pid,
 			event_data.Uid,
 			event_data.Gid,
@@ -103,7 +103,8 @@ func ringbuff(reader *ringbuf.Reader) {
 			event_data.Egid,
 			event_data.Cwd[:],
 			event_data.FileName[:],
-			strings.Split(arrayToString(event_data.Argu[:][:]), "#")[0],
+			strings.Split(arrayToString(event_data.Argv[:][:]), "#")[0],
+			strings.Split(arrayToString(event_data.Envp[:][:]), "#")[0],
 		)
 
 	}

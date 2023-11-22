@@ -20,7 +20,8 @@ type exesnoopEvent struct {
 	Egid     uint32
 	FileName [100]uint8
 	Cwd      [100]uint8
-	Argu     [10][100]uint8
+	Argv     [10][100]uint8
+	Envp     [10][100]uint8
 }
 
 // loadExesnoop returns the embedded CollectionSpec for exesnoop.
@@ -125,5 +126,6 @@ func _ExesnoopClose(closers ...io.Closer) error {
 }
 
 // Do not access this directly.
+//
 //go:embed exesnoop_bpfel.o
 var _ExesnoopBytes []byte
