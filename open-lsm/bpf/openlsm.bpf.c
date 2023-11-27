@@ -24,6 +24,8 @@ struct {
 
 struct event *unused_event __attribute__((unused));
 
+#define MAX_STR  32
+
 SEC("lsm/file_open")
 int BPF_PROG(file_open, struct file *file){
     struct event *event_t;
@@ -45,7 +47,7 @@ int BPF_PROG(file_open, struct file *file){
     bpf_core_read_str(&event_t->file_name, sizeof(event_t->file_name), file_name);
 
     
-    if (__builtin_memcmp(file_n , &event_t->file_name, sizeof(*file_n)) == 0){
+    if (__builtin_memcmp(file_n , &event_t->file_name, MAX_STR) == 0){
         bpf_printk("File %s blocked based on current policy", file_n);
         bpf_ringbuf_submit(event_t, 0);
         return -EPERM;

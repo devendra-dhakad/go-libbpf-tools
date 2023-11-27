@@ -7,7 +7,7 @@ build: gen $(APP)
 gen: vmlinux bpf2go gobuild run
 
 run: openlsm.go openlsm_bpfel.go
-	./$(APP) -f happy.txt
+	./$(APP) -f block.txt
 
 
 gobuild:

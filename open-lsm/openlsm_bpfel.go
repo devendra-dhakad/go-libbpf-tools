@@ -119,5 +119,6 @@ func _OpenlsmClose(closers ...io.Closer) error {
 }
 
 // Do not access this directly.
+//
 //go:embed openlsm_bpfel.o
 var _OpenlsmBytes []byte
