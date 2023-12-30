@@ -110,8 +110,8 @@ func ringbuff(reader *ringbuf.Reader) {
 		if err := binary.Read(bytes.NewBuffer(rd_data.RawSample), binary.LittleEndian, &event_data); err != nil {
 			log.Printf("error in parsing ringbuff data")
 		}
-		log.Printf("file opened by system %s, path %s, status %d rett %d\n",
-			event_data.FileName, printChar(event_data.Path), event_data.StatusCode, event_data.Ret)
+		log.Printf("file opened by system %s, path %s\n",
+			event_data.FileName, printChar(event_data.Path))
 
 	}
 }
