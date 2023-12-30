@@ -13,10 +13,8 @@ import (
 )
 
 type openlsmEvent struct {
-	FileName   [128]uint8
-	Path       [128]uint8
-	StatusCode uint8
-	Ret        uint8
+	FileName [128]uint8
+	Path     [128]uint8
 }
 
 // loadOpenlsm returns the embedded CollectionSpec for openlsm.

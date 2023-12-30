@@ -9,8 +9,6 @@
 struct event{
     __u8 file_name[MAX_STR];
     __u8 path[MAX_STR ];
-    __u8 status_code;
-    __u8 ret;
 };
 
 struct {
@@ -76,27 +74,25 @@ int BPF_PROG(file_open, struct file *file){
     }
 
     file_name  = file->f_path.dentry->d_name.name;
-    event_t->ret =  bpf_d_path(&file->f_path , (char *)&event_t->path[0] , MAX_STR);
+    bpf_d_path(&file->f_path , (char *)&event_t->path[0] , MAX_STR);
 
     bpf_core_read_str(&event_t->file_name, sizeof(event_t->file_name), file_name);
 
     if (__builtin_memcmp(file_n , &event_t->file_name, MAX_STR) == 0){
-        event_t->status_code=0;
         bpf_printk("File %s blocked based on current policy %s path", event_t->file_name, event_t->path);
 
         bpf_ringbuf_submit(event_t, 0);
         return -EPERM;
     }
     
-    int ret = strlen((const char *)path);
-    int ret1 = strncmp(path, &event_t->path[0], ret);
-    bpf_printk("cmp return %d %s", ret, path);
-    if ( ret1 == 0){
-        bpf_printk("file %s zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", event_t->file_name);
-        event_t->status_code=1;
+    int len = strlen((const char *)path);
+    int ret1 = strncmp(path, &event_t->path[0], len);
+    if ( ret1 == 0 && len != 0){
+        bpf_printk("hellov ");
         bpf_ringbuf_submit(event_t, 0);
         return -EPERM;
     }
+
 
     bpf_ringbuf_discard(event_t, 0);
 
