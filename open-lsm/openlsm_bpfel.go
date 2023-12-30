@@ -12,7 +12,12 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type openlsmEvent struct{ FileName [100]uint8 }
+type openlsmEvent struct {
+	FileName   [128]uint8
+	Path       [128]uint8
+	StatusCode uint8
+	Ret        uint8
+}
 
 // loadOpenlsm returns the embedded CollectionSpec for openlsm.
 func loadOpenlsm() (*ebpf.CollectionSpec, error) {

@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/cilium/ebpf"
@@ -28,8 +29,9 @@ func main() {
 	log.SetOutput(multi)
 
 	var file_pointer = flag.String("f", "", "file name")
+	var path = flag.String("p", "", "file name")
 	flag.Parse()
-	if *file_pointer == "" {
+	if *file_pointer == "" && *path == "" {
 		log.Fatalln("Please provide file name ")
 	}
 
@@ -44,8 +46,8 @@ func main() {
 	opt := ebpf.CollectionOptions{
 		Programs: ebpf.ProgramOptions{
 			//Verbose to catch eBPF verifier issues
-			LogLevel: 1,
-			LogSize:  65535,
+			LogLevel: ebpf.LogLevelBranch,
+			LogSize:  65535 * 10,
 		},
 	}
 
@@ -54,15 +56,27 @@ func main() {
 
 	}
 
-	var filename_arr [80]byte
+	defer objs.Close()
+
+	var filename_arr [128]byte
+	var pathArr [128]byte
 
 	copy(filename_arr[:], []byte(*file_pointer))
-	objs.ArgMap.Put(uint32(0), filename_arr)
+	if err := objs.ArgMap.Put(uint32(0), filename_arr); err != nil {
+		log.Printf("adding file name in map %v", err)
+	}
 
-	if _, err := link.AttachLSM(link.LSMOptions{
+	copy(pathArr[:], []byte(*path))
+	objs.ArgMap.Put(uint32(1), pathArr)
+
+	link, err := link.AttachLSM(link.LSMOptions{
 		Program: objs.openlsmPrograms.FileOpen,
-	}); err != nil {
-		log.Printf("%v", err)
+	})
+
+	defer link.Close()
+
+	if err != nil {
+		log.Printf("could not attach LSM program %v", err)
 	}
 	reader, err := ringbuf.NewReader(objs.openlsmMaps.Ringbuff)
 	if err != nil {
@@ -70,6 +84,18 @@ func main() {
 	}
 	go ringbuff(reader)
 	<-ch
+}
+
+func printChar(arry [128]uint8) string {
+	// str [128]string
+	var builder strings.Builder
+	for _, b := range arry {
+		if b == 0 {
+			break // Stop appending bytes at null terminator
+		}
+		builder.WriteByte(b)
+	}
+	return builder.String()
 }
 func ringbuff(reader *ringbuf.Reader) {
 	var event_data openlsmEvent
@@ -84,7 +110,8 @@ func ringbuff(reader *ringbuf.Reader) {
 		if err := binary.Read(bytes.NewBuffer(rd_data.RawSample), binary.LittleEndian, &event_data); err != nil {
 			log.Printf("error in parsing ringbuff data")
 		}
-		log.Printf("file opened by system %s \n",
-			event_data.FileName[:])
+		log.Printf("file opened by system %s, path %s, status %d rett %d\n",
+			event_data.FileName, printChar(event_data.Path), event_data.StatusCode, event_data.Ret)
+
 	}
 }
